@@ -31,7 +31,8 @@ class multiPoolPrepare(nn.Module):
 
     def forward(self, x):
         y = F.pad(x, [self.pad_left, self.pad_right,
-                      self.pad_top, self.pad_bottom], value=0)
+                      self.pad_top, self.pad_bottom], mode='reflect')
+        #    value=0)
         return y
 
 
