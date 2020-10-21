@@ -1,8 +1,36 @@
 # Uninformed Students
-
+![result](https://raw.githubusercontent.com/LuyaooChen/uninformed-students-pytorch/main/res.jpg)
 ## Introduction - 介绍
-Implementation of paper:  
-MVTec, Uninformed Students: Student–Teacher Anomaly Detection with Discriminative Latent Embeddings. CVPR, 2020.
+A simple and incomplete implementation of paper:  
+MVTec, [Uninformed Students: Student–Teacher Anomaly Detection with Discriminative Latent Embeddings.](https://ieeexplore.ieee.org/document/9157778/) CVPR, 2020.  
+[arXiv:1911.02357](https://arxiv.org/abs/1911.02357)
 
 ## Requirements - 依赖
-PyTorch 1.3
+python3  
+pytorch~=1.3  
+torchvision  
+numpy  
+opencv-python
+
+## Usage - 用法
+### Prepare datasets
+imagenet (any image dataset)  
+MVTec_AD
+### Train a teacher network
+choose a `patch_size` from (17, 33 or 65) and  
+`python teacher_train.py`
+### Train a student network
+choose a `patch_size`(the teacher net should have been pretrained), and set `st_id`  
+`python student_train.py`
+### Evaluate
+`python evaluate.py`  
+the res.jpg will be saved to the current directory.  
+multi-scale segmentation has not been tested because of not enough GPU memory.
+
+## TODO
+metric learning and descriptor compactness in teacher_train.py 
+complete evaluate.py  
+...
+
+## Reference - 参考
+https://github.com/erezposner/Fast_Dense_Feature_Extraction

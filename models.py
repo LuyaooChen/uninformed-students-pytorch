@@ -14,7 +14,6 @@ from torch import nn
 from fast_dense_feature_extractor import *
 
 
-
 class _Teacher17(nn.Module):
     """
     T^ net for patch size 17. 
@@ -24,7 +23,8 @@ class _Teacher17(nn.Module):
         super(_Teacher17, self).__init__()
         self.net = nn.Sequential(
             # Input n*3*17*17
-            nn.Conv2d(3, 128, kernel_size=6, stride=1), # ???? kernel_size=5????
+            # ???? kernel_size=5????
+            nn.Conv2d(3, 128, kernel_size=6, stride=1),
             nn.LeakyReLU(5e-3),
             # n*128*12*12
             nn.Conv2d(128, 256, kernel_size=5, stride=1),
@@ -37,12 +37,12 @@ class _Teacher17(nn.Module):
             # n*128*1*1
         )
         self.decode = nn.Linear(128, 512)
-            # nn.Sequential(
-            # # nn.LeakyReLU(5e-3),
-            # # # n*128*1*1
-            # # nn.Conv2d(128, 512, kernel_size=1, stride=1),
-            # # output n*512*1*1
-            # )
+        # nn.Sequential(
+        # # nn.LeakyReLU(5e-3),
+        # # # n*128*1*1
+        # # nn.Conv2d(128, 512, kernel_size=1, stride=1),
+        # # output n*512*1*1
+        # )
 
     def forward(self, x):
         x = self.net(x)
@@ -61,16 +61,19 @@ class _Teacher33(nn.Module):
         self.net = nn.Sequential(
             # Input n*3*33*33
             nn.Conv2d(3, 128, kernel_size=3, stride=1),
+            # nn.BatchNorm2d(128),
             nn.LeakyReLU(5e-3),
             # n*128*29*29
             nn.MaxPool2d(kernel_size=2, stride=2),
             # n*128*14*14
             nn.Conv2d(128, 256, kernel_size=5, stride=1),
+            # nn.BatchNorm2d(256),
             nn.LeakyReLU(5e-3),
             # n*256*10*10
             nn.MaxPool2d(kernel_size=2, stride=2),
             # n*256*5*5
             nn.Conv2d(256, 256, kernel_size=2, stride=1),
+            # nn.BatchNorm2d(256),
             nn.LeakyReLU(5e-3),
             # n*256*4*4
             nn.Conv2d(256, 128, kernel_size=4, stride=1),
@@ -112,7 +115,8 @@ class _Teacher65(nn.Module):
             nn.Conv2d(128, 256, kernel_size=4, stride=1),
             nn.LeakyReLU(5e-3),
             # n*256*1*1
-            nn.Conv2d(256, 128, kernel_size=1, stride=1), # ???? kernel_size=3????
+            # ???? kernel_size=3????
+            nn.Conv2d(256, 128, kernel_size=1, stride=1),
             # n*128*1*1
         )
         self.decode = nn.Linear(128, 512)
@@ -132,7 +136,7 @@ class Teacher17(nn.Module):
 
     def __init__(self, base_net: _Teacher17):
         super(Teacher17, self).__init__()
-        self.multiPoolPrepare = multiPoolPrepare(17,17)
+        self.multiPoolPrepare = multiPoolPrepare(17, 17)
         self.net = base_net.net
 
     def forward(self, x):
@@ -175,15 +179,15 @@ class Teacher33(nn.Module):
             base_net.net[7],
             base_net.net[8],
             unwrapPrepare(),
-            unwrapPool(self.outChans, imH / (self.sL1*self.sL2),
-                       imW / (self.sL1*self.sL2), self.sL2, self.sL2),
+            unwrapPool(self.outChans, imH / (self.sL1 * self.sL2),
+                       imW / (self.sL1 * self.sL2), self.sL2, self.sL2),
             unwrapPool(self.outChans, imH / self.sL1,
                        imW / self.sL1, self.sL1, self.sL1),
         )
-    
+
     def forward(self, x):
         x = self.net(x)
-        x = x.permute(5,0,1,2,3,4)
+        x = x.permute(5, 0, 1, 2, 3, 4)
         x = x.view(x.shape[0], -1, self.imH, self.imW)
         return x
 
@@ -236,24 +240,54 @@ class Teacher65(nn.Module):
 
     def forward(self, x):
         x = self.net(x)
-        print(x.shape)
-        x = x.permute(5,0,1,2,3,4)
+        # print(x.shape)
+        x = x.permute(5, 0, 1, 2, 3, 4)
         x = x.view(x.shape[0], -1, self.imH, self.imW)
         return x
 
 
+
+def _Teacher(patch_size):
+    if patch_size == 17:
+        return _Teacher17()
+    if patch_size == 33:
+        return _Teacher33()
+    if patch_size == 65:
+        return _Teacher65()
+    else:
+        print('No implementation of net wiht patch_size: ' + str(patch_size))
+        return None
+
+
+def TeacherOrStudent(patch_size, base_net, imH=None, imW=None):
+    if patch_size == 17:
+        return Teacher17(base_net)
+    if patch_size == 33:
+        if imH is None or imW is None:
+            print('imH and imW are necessary.')
+            return None
+        return Teacher33(base_net, imH, imW)
+    if patch_size == 65:
+        if imH is None or imW is None:
+            print('imH and imW are necessary.')
+            return None
+        return Teacher65(base_net, imH, imW)
+    else:
+        print('No implementation of net wiht patch_size: '+str(patch_size))
+        return None
+
 if __name__ == "__main__":
-    net = _Teacher65()
+    net = _Teacher17()
     imH = 128
     imW = 128
-    pH = 65
-    pW = 65
+    pH = 17
+    pW = 17
 
-    T = Teacher65(net, imH, imW)
+    T = Teacher17(net)
     # T = Teacher33(net, imH, imW)
     x = torch.ones((2, 3, imH, imW))
 
-    x_ = torch.ones((1, 3, pH, pW))
+    x_ = torch.ones((1, 3, 64, 64))
 
     y = T(x)
     y_ = net(x_)
