@@ -4,6 +4,8 @@
 A simple and incomplete implementation of paper:  
 MVTec, [Uninformed Students: Student–Teacher Anomaly Detection with Discriminative Latent Embeddings.](https://ieeexplore.ieee.org/document/9157778/) CVPR, 2020.  
 [arXiv:1911.02357](https://arxiv.org/abs/1911.02357)
+  
+Another implementation repo: https://github.com/denguir/student-teacher-anomaly-detection  
 
 ## Requirements - 依赖
 python3  
@@ -33,4 +35,5 @@ complete evaluate.py
 ...
 
 ## Reference - 参考
-https://github.com/erezposner/Fast_Dense_Feature_Extraction
+https://github.com/erezposner/Fast_Dense_Feature_Extraction  
+https://github.com/denguir/student-teacher-anomaly-detection

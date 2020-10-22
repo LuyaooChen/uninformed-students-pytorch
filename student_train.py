@@ -34,71 +34,70 @@ def loss_fn(student_output: torch.tensor,
     )
     return loss
 
+if __name__ == "__main__":
+    
+    st_id = 1  # student id, start from 0.
+    # image height and width should be multiples of sL1∗sL2∗sL3...
+    imH = 512
+    imW = 512
+    patch_size = 33
+    batch_size = 1
+    epochs = 20
+    lr = 1e-4
+    weight_decay = 1e-5
+    work_dir = 'work_dir/wood/'
+    device = torch.device('cuda:1')
 
-st_id = 0  # student id, start from 0.
-# image height and width should be multiples of sL1∗sL2∗sL3...
-imH = 512
-imW = 512
-patch_size = 33
-batch_size = 1
-epochs = 20
-lr = 1e-4
-weight_decay = 1e-5
-work_dir = 'work_dir/'
-device = torch.device('cuda:1')
+    trans = transforms.Compose([
+        transforms.RandomCrop((imH, imW)),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    dataset = datasets.ImageFolder(
+        '/home/cly/data_disk/MVTec_AD/data/wood/train/', transform=trans)
+    dataloader = DataLoader(dataset, batch_size=batch_size,
+                            shuffle=True, num_workers=8, pin_memory=True)
 
-trans = transforms.Compose([
-    transforms.RandomCrop((imH, imW)),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-])
-# dataset = datasets.ImageNet(
-#     '/home/cly/data_disk/imagenet1k/', transform=trans)
-dataset = datasets.ImageFolder(
-    '/home/cly/data_disk/MVTec_AD/data/wood/train/', transform=trans)
-dataloader = DataLoader(dataset, batch_size=batch_size,
-                        shuffle=True, num_workers=8, pin_memory=True)
+    _teacher = _Teacher(patch_size)
+    student = TeacherOrStudent(patch_size, _teacher, imH, imW).to(device)
 
-_teacher = _Teacher(patch_size)
-student = TeacherOrStudent(patch_size, _teacher, imH, imW).to(device)
+    _teacher = _Teacher(patch_size)
+    checkpoint = torch.load(work_dir + '_teacher' +
+                            str(patch_size) + '.pth', torch.device('cpu'))
+    _teacher.load_state_dict(checkpoint)
+    teacher = TeacherOrStudent(patch_size, _teacher, imH, imW).to(device)
+    teacher.eval()
 
-_teacher = _Teacher(patch_size)
-checkpoint = torch.load(work_dir + '_teacher' +
-                        str(patch_size) + '.pth', torch.device('cpu'))
-_teacher.load_state_dict(checkpoint)
-teacher = TeacherOrStudent(patch_size, _teacher, imH, imW).to(device)
-teacher.eval()
+    optim = torch.optim.Adam(student.parameters(), lr=lr,
+                            weight_decay=weight_decay)
 
-optim = torch.optim.Adam(student.parameters(), lr=lr,
-                         weight_decay=weight_decay)
+    iter_num = 1
+    for i in range(epochs):
+        for data, labels in dataloader:
+            data = data.to(device)
+            # labels = labels.to(device)
+            with torch.no_grad():
+                teacher_output = teacher(data)
+                std_mean = torch.std_mean(teacher_output, dim=[2, 3])
 
-iter_num = 1
-for i in range(epochs):
-    for data, labels in dataloader:
-        data = data.to(device)
-        # labels = labels.to(device)
-        # with torch.no_grad():
-        teacher_output = teacher(data)
-        std_mean = torch.std_mean(teacher_output, dim=[2, 3])
+            student_output = student(data)
+            loss = loss_fn(student_output,
+                        teacher_output, std_mean[1], std_mean[0])
 
-        student_output = student(data)
-        loss = loss_fn(student_output,
-                       teacher_output, std_mean[1], std_mean[0])
+            optim.zero_grad()
+            loss.backward()
+            optim.step()
 
-        optim.zero_grad()
-        loss.backward()
-        optim.step()
+            if iter_num % 10 == 0:
+                print('epoch: {}, iter: {}, loss: {}'.format(
+                    i + 1, iter_num, loss))
+            iter_num += 1
+        iter_num = 0
 
-        if iter_num % 10 == 0:
-            print('epoch: {}, iter: {}, loss: {}'.format(
-                i + 1, iter_num, loss))
-        iter_num += 1
-    iter_num = 0
+    if not os.path.exists(work_dir):
+        os.mkdir(work_dir)
+    print('Saving model to work_dir...')
 
-if not os.path.exists(work_dir):
-    os.mkdir(work_dir)
-print('Saving model to work_dir...')
-
-torch.save(student.state_dict(), work_dir +
-           'student' + str(patch_size) + '_' + str(st_id) + '.pth')
+    torch.save(student.state_dict(), work_dir +
+            'student' + str(patch_size) + '_' + str(st_id) + '.pth')
