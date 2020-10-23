@@ -27,7 +27,6 @@ choose a `patch_size`(the teacher net should have been pretrained), and set `st_
 ### Evaluate
 `python evaluate.py`  
 the res.jpg will be saved to the current directory.  
-multi-scale segmentation has not been tested because of not enough GPU memory.
 
 ## TODO
 metric learning and descriptor compactness in teacher_train.py   
