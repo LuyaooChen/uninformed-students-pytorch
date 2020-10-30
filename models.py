@@ -142,6 +142,7 @@ class Teacher17(nn.Module):
     def forward(self, x):
         x = self.multiPoolPrepare(x)
         x = self.net(x)
+        x = x.permute(0, 2, 3, 1)
         return x
 
 
@@ -187,8 +188,8 @@ class Teacher33(nn.Module):
 
     def forward(self, x):
         x = self.net(x)
-        x = x.permute(5, 0, 1, 2, 3, 4)
-        x = x.view(x.shape[0], -1, self.imH, self.imW)
+        x = x.view(x.shape[0], self.imH, self.imW, -1)
+        x = x.permute(3, 1, 2, 0)
         return x
 
 
@@ -241,8 +242,8 @@ class Teacher65(nn.Module):
     def forward(self, x):
         x = self.net(x)
         # print(x.shape)
-        x = x.permute(5, 0, 1, 2, 3, 4)
-        x = x.view(x.shape[0], -1, self.imH, self.imW)
+        x = x.view(x.shape[0], self.imH, self.imW, -1)
+        x = x.permute(3,1,2,0)
         return x
 
 
@@ -278,21 +279,19 @@ def TeacherOrStudent(patch_size, base_net, imH=None, imW=None):
 
 if __name__ == "__main__":
     net = _Teacher17()
-    imH = 128
-    imW = 128
-    pH = 17
-    pW = 17
+    imH = 256
+    imW = 256
 
     T = Teacher17(net)
     # T = Teacher33(net, imH, imW)
     x = torch.ones((2, 3, imH, imW))
 
-    x_ = torch.ones((1, 3, 64, 64))
+    # x_ = torch.ones((1, 3, 64, 64))
 
     y = T(x)
-    y_ = net(x_)
+    # y_ = net(x_)
 
     # print(y)
     print(y.shape)
-    print(y_.shape)
+    # print(y_.shape)
     # print(T)

@@ -38,14 +38,14 @@ def compactness_loss(output):
 
 
 if __name__ == "__main__":
-    patch_size = 17
+    patch_size = 65
     batch_size = 64
     lr = 2e-4
     weight_decay = 1e-5
     epochs = 2
     # alpha = 0.9
     # temperature = 20
-    work_dir = 'work_dir/wood/'
+    work_dir = 'work_dir/'
     device = torch.device('cuda:1')
 
     trans = transforms.Compose([
@@ -75,16 +75,19 @@ if __name__ == "__main__":
                 resnet_output = resnet18(data)[:, :512]
 
             # knowledge distillation loss
-            loss_k = F.smooth_l1_loss(output, resnet_output, reduction='sum')
-            # metric learning and descriptor compactness are not implemented yet.
+            # loss_k = F.smooth_l1_loss(output, resnet_output, reduction='sum')
+            loss_k = distillation_loss(output, resnet_output)
+            # metric learning is not implemented yet.
+            loss_c = compactness_loss(output)
+            loss = loss_k + loss_c
             optim.zero_grad()
-            loss_k.backward()
+            loss.backward()
             optim.step()
 
             iter_num += 1
             if iter_num % 10 == 0:
-                print('epoch: {}, iter: {}, loss_k: {}'.format(
-                    i + 1, iter_num, loss_k))
+                print('epoch:{}, iter:{}, loss_k:{:.3f}, loss_c:{:.3f}, loss:{:.3f}'.format(
+                    i + 1, iter_num, loss_k, loss_c, loss))
         iter_num = 0
 
     if not os.path.exists(work_dir):
