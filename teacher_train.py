@@ -59,7 +59,8 @@ if __name__ == "__main__":
                             shuffle=True, num_workers=8, pin_memory=True)
 
     model = _Teacher(patch_size).to(device)
-    resnet18 = models.resnet18(pretrained=True).to(device)
+    resnet18 = models.resnet18(pretrained=True)
+    resnet18 = nn.Sequential(*list(resnet18.children())[:-1]).to(device)
     resnet18.eval()
 
     optim = torch.optim.Adam(model.parameters(), lr=lr,
@@ -72,7 +73,7 @@ if __name__ == "__main__":
             # labels = labels.to(device)
             output = model(data)
             with torch.no_grad():
-                resnet_output = resnet18(data)[:, :512]
+                resnet_output = resnet18(data).view(-1, 512)
 
             # knowledge distillation loss
             # loss_k = F.smooth_l1_loss(output, resnet_output, reduction='sum')

@@ -46,7 +46,7 @@ class _Teacher17(nn.Module):
 
     def forward(self, x):
         x = self.net(x)
-        x = x.squeeze().view(-1, 128)
+        x = x.view(-1, 128)
         x = self.decode(x)
         return x
 
@@ -83,7 +83,7 @@ class _Teacher33(nn.Module):
 
     def forward(self, x):
         x = self.net(x)
-        x = x.squeeze().view(-1, 128)
+        x = x.view(-1, 128)
         x = self.decode(x)
         return x
 
@@ -123,7 +123,7 @@ class _Teacher65(nn.Module):
 
     def forward(self, x):
         x = self.net(x)
-        x = x.squeeze().view(-1, 128)
+        x = x.view(-1, 128)
         x = self.decode(x)
         return x
 
@@ -286,12 +286,12 @@ if __name__ == "__main__":
     # T = Teacher33(net, imH, imW)
     x = torch.ones((2, 3, imH, imW))
 
-    # x_ = torch.ones((1, 3, 64, 64))
+    x_ = torch.ones((2, 3, 17, 17))
 
     y = T(x)
-    # y_ = net(x_)
+    y_ = net(x_)
 
     # print(y)
     print(y.shape)
-    # print(y_.shape)
+    print(y_.shape)
     # print(T)
