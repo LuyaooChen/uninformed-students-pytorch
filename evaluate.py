@@ -65,14 +65,12 @@ def increment_mean_and_var(mu_N, var_N, N, batch):
 
 if __name__ == "__main__":
     patch_sizes = [33]  # add more size for multi-scale segmentation
-    num_students = 2  # num of studetns per teacher
+    num_students = 3  # num of studetns per teacher
     imH = 256  # image height and width should be multiples of sL1∗sL2∗sL3...
     imW = 256
     batch_size = 1
     work_dir = 'work_dir/'
-    class_dir = 'leather/'
-    # train_dataset_dir = '/home/cly/data_disk/印花布/normal/3/'
-    # test_dataset_dir = '/home/cly/data_disk/印花布/瑕疵布/3/'
+    class_dir = 'grid/'
     train_dataset_dir = '/home/cly/data_disk/MVTec_AD/data/' + class_dir + 'train/'
     test_dataset_dir = '/home/cly/data_disk/MVTec_AD/data/' + class_dir
     device = torch.device('cuda:1')
@@ -142,7 +140,7 @@ if __name__ == "__main__":
         max_err, max_var = [0 for i in range(N_scale)], [0 for i in range(N_scale)]
         mu_err, var_err, N_err = [0 for i in range(N_scale)], [0 for i in range(N_scale)], [0 for i in range(N_scale)]
         mu_var, var_var, N_var = [0 for i in range(N_scale)], [0 for i in range(N_scale)], [0 for i in range(N_scale)]
-        print('Callibrating scoring parameters on Student dataset.')
+        print('Callibrating scoring parameters on train dataset.')
         for data, _ in tqdm(af_dataloader):
             data = data.to(device)
             for i in range(N_scale):
@@ -175,7 +173,8 @@ if __name__ == "__main__":
 
         score_map_list = []
         gt_mask_list = []
-        for data, gt_mask, _ in test_dataloader:
+        img_id = 0
+        for data, gt_mask, _ in tqdm(test_dataloader):
             plt_list = []
             ori_imgs = data
             data = data.to(device)
@@ -201,54 +200,54 @@ if __name__ == "__main__":
             #                                                 torch.min(anomaly_score),
             #                                                 torch.mean(anomaly_score)))
 
-            plt.figure()
-            plt.subplot(2, 2, 1)
-            plt_img = plt_list[1].cpu().detach().numpy()[0]
-            plt_img = np.mean(plt_img, axis=2)
-            plt_img = np.expand_dims(plt_img, 2)
-            plt.imshow(plt_img, cmap='jet')
-            plt.colorbar()
-            plt.subplot(2, 2, 2)
-            plt_img = plt_list[2].cpu().detach().numpy()[0]
-            plt_img = np.mean(plt_img, axis=2)
-            plt_img = np.expand_dims(plt_img, 2)
-            plt.imshow(plt_img, cmap='jet')
-            plt.colorbar()
+            # plt.figure()
+            # plt.subplot(2, 2, 1)
+            # plt_img = plt_list[1].cpu().detach().numpy()[0]
+            # plt_img = np.mean(plt_img, axis=2)
+            # plt_img = np.expand_dims(plt_img, 2)
+            # plt.imshow(plt_img, cmap='jet')
+            # plt.colorbar()
+            # plt.subplot(2, 2, 2)
+            # plt_img = plt_list[2].cpu().detach().numpy()[0]
+            # plt_img = np.mean(plt_img, axis=2)
+            # plt_img = np.expand_dims(plt_img, 2)
+            # plt.imshow(plt_img, cmap='jet')
+            # plt.colorbar()
             # plt.subplot(2, 2, 3)
             # plt_img = plt_list[3].cpu().detach().numpy()[0]
             # plt_img = np.mean(plt_img, axis=2)
             # plt_img = np.expand_dims(plt_img, 2)
             # plt.imshow(plt_img, cmap='jet')
             # plt.colorbar()
-            plt.subplot(2, 2, 4)
-            plt_img = plt_list[0].cpu().detach().numpy()[0]
-            plt_img = np.mean(plt_img, axis=2)
-            plt_img = np.expand_dims(plt_img, 2)
-            plt.imshow(plt_img, cmap='jet')
-            plt.colorbar()
-            plt.savefig('cmp.png')
-            plt.close()
+            # plt.subplot(2, 2, 4)
+            # plt_img = plt_list[0].cpu().detach().numpy()[0]
+            # plt_img = np.mean(plt_img, axis=2)
+            # plt_img = np.expand_dims(plt_img, 2)
+            # plt.imshow(plt_img, cmap='jet')
+            # plt.colorbar()
+            # plt.savefig('cmp.png')
+            # plt.close()
 
-            px = 118
-            py = 132
-            plt.figure(figsize=(6, 3))
-            plt_vec = plt_list[1].cpu().detach().numpy()[0, px, py]
-            plt_vec -= plt_list[2].cpu().detach().numpy()[0, px, py]
-            plt.plot(plt_vec, label='s1')
+            # px = 118
+            # py = 132
+            # plt.figure(figsize=(6, 3))
+            # plt_vec = plt_list[1].cpu().detach().numpy()[0, px, py]
+            # plt_vec -= plt_list[0].cpu().detach().numpy()[0, px, py]
+            # plt.plot(plt_vec, label='s1')
             # plt_vec = plt_list[2].cpu().detach().numpy()[0, px, py]
             # plt.plot(plt_vec, label='s2')
             # plt_vec = plt_list[3].cpu().detach().numpy()[0, px, py]
             # plt.plot(plt_vec, label='s3')
             # plt_vec = plt_list[0].cpu().detach().numpy()[0, px, py]
             # plt.plot(plt_vec, label='t')
-            plt.legend()
-            plt.savefig('vec.png')
-            plt.close()
+            # plt.legend()
+            # plt.savefig('vec.png')
+            # plt.close()
 
             anomaly_score -= torch.min(anomaly_score)
             # anomaly_score /= torch.max(anomaly_score)
-            # anomaly_score /= max_score
-            anomaly_score /= 30
+            anomaly_score /= max_score
+            # anomaly_score /= 30
             score_map = anomaly_score.cpu().detach().numpy()[0, :, :]
             score_map = np.minimum(score_map, 1)
             score_map = cv2.applyColorMap(
@@ -261,7 +260,9 @@ if __name__ == "__main__":
             # # cv2.imwrite('ori.jpg', np.uint8(ori_img * 255))
             save_img = np.concatenate(
                 (np.uint8(ori_img * 255), score_map), axis=1)
-            cv2.imwrite('res.jpg', save_img)
+            # cv2.imwrite('res.jpg', save_img)
+            cv2.imwrite('tmp/' + str(img_id) + '.jpg', save_img)
+            img_id += 1
 
         flatten_gt_mask_list = np.concatenate(gt_mask_list).ravel()
         flatten_score_map_list = np.concatenate(score_map_list).ravel()
