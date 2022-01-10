@@ -7,7 +7,7 @@ MVTec, [Uninformed Students: Student–Teacher Anomaly Detection with Discrimina
   
 Another implementation repo: https://github.com/denguir/student-teacher-anomaly-detection  
 
-此项目复现主要是本人学习之用，可能存在各种问题。有个朋友创了一个QQ群，欢迎加群讨论：689772351
+此项目复现主要是本人学习之用，可能存在各种问题，且目前已不再维护！。
 
 ## Requirements - 依赖
 python3  
